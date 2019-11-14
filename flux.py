@@ -490,7 +490,7 @@ def supermomentum_L_M(ell_min, ell_max, L, M, s=-2):
 
     # I am not sure this is the correct prefactor in general but                                                                                       
     # it agrees with the energy and linear momentum fluxes (l=0,1) above                                                                               
-    prefac= np.sqrt(4. * np.pi/(2.*L + 1)*math.factorial(L-abs(M))/math.factorial(L+abs(M)))
+    #prefac= np.sqrt(4. * np.pi/(2.*L + 1)*math.factorial(L-abs(M))/math.factorial(L+abs(M)))
 
     def swsh_Y_mat_el(s, l3, m3, l1, m1, l2, m2):
         """Compute a matrix element treating Y_{\ell, m} as a linear operator                                                                         \
@@ -524,7 +524,7 @@ def supermomentum_L_M(ell_min, ell_max, L, M, s=-2):
 #                if ((mp < -ellp) or (mp > ellp)):                                                                                                     
 #                    continue                                                                                                                          
                     yield (ellp, mp, ell, m,
-                           (prefac *
+                           (
                             swsh_Y_mat_el(s, ellp, mp, L, M, ell, m)))
 
 #note that supermomentum_flux requires specifying l,m                                                                                                                                                                                                                            
