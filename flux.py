@@ -476,3 +476,86 @@ def poincare_fluxes(h, hdot=None):
     return (energy_flux(hdot),
             momentum_flux(hdot),
             angular_momentum_flux(h, hdot))
+
+
+##### the functions below I have added to compute supermomentum fluxes                                                                                 
+##### this is really a generalization of the momentum_flux formula above                                                                               
+##### allowing for a different choice of L and M                                                                                                       
+
+
+@swsh_indices_to_matrix_indices
+def supermomentum_L_M(ell_min, ell_max, L, M, s=-2):
+
+    import numpy as np
+
+    # I am not sure this is the correct prefactor in general but                                                                                       
+    # it agrees with the energy and linear momentum fluxes (l=0,1) above                                                                               
+    prefac= np.sqrt(4. * np.pi/(2.*L + 1)*math.factorial(L-abs(M))/math.factorial(L+abs(M)))
+
+    def swsh_Y_mat_el(s, l3, m3, l1, m1, l2, m2):
+        """Compute a matrix element treating Y_{\ell, m} as a linear operator                                                                         \
+           From the rules for the Wigner D matrices, we get the result that                                                                           \
+                                                                                                                                                       
+        <s, l3, m3 | Y_{l1, m1} | s, l2, m2 > =                                                                                                       
+          \sqrt{ \frac{(2*l1+1)(2*l2+1)}{4*\pi*(2*l3+1)} } *                                                                                          \
+           < l1, m1, l2, m2 | l3, m3 > < l1, 0, l2, −s | l3, −s >                                                                                     \
+          where the terms on the last line are the ordinary Clebsch-Gordan coefficients.                                                              \
+           See e.g. Campbell and Morgan (1971).                                                                                                       \
+            """
+        from spherical_functions import clebsch_gordan as CG
+
+        cg1 = CG(l1, m1, l2, m2, l3, m3)
+        cg2 = CG(l1, 0., l2, -s, l3, -s)
+
+        return np.sqrt( (2.*l1 + 1.) * (2.*l2 + 1.) / (4. * np.pi * (2.*l3 + 1)) ) * cg1 * cg2
+
+    
+    for ell in range(ell_min, ell_max+1):
+#        ellp_min = max(ell_min, ell - 1)                                                                                                              
+#        ellp_max = min(ell_max, ell + 1)                                                                                                              
+
+        # to make sure I don't miss any component run over all possible ell,m,ellp,mp                                                                  
+        ellp_min=ell_min
+        ellp_max=ell_max
+        for ellp in range(ellp_min, ellp_max+1):
+            for m in range(-ell, ell+1):
+                for mp in range(-ellp, ellp+1):
+#                mp = round(m + 0 * sign)                                                                                                              
+#                if ((mp < -ellp) or (mp > ellp)):                                                                                                     
+#                    continue                                                                                                                          
+                    yield (ellp, mp, ell, m,
+                           (prefac *
+                            swsh_Y_mat_el(s, ellp, mp, L, M, ell, m)))
+
+#note that supermomentum_flux requires specifying l,m                                                                                                  
+def supermomentum_flux(h,l,m):
+    import numpy as np
+    from .waveform_modes import WaveformModes
+    from . import h as htype
+    from . import hdot as hdottype
+
+    if not isinstance(h, WaveformModes):
+        raise ValueError("Momentum flux can only be calculated from a `WaveformModes` object; "
+                         +"this object is of type `{0}`.".format(type(h)))
+    if h.dataType == hdottype:
+        hdot = h
+    elif h.dataType == htype:
+        hdot = h.copy()
+        hdot.dataType = hdottype
+        hdot.data = h.data_dot
+    else:
+        raise ValueError("Input argument is expected to have data of type `h` or `hdot`; "
+                         +"this waveform data has type `{0}`".format(h.data_type_string))
+
+    P_L_M_dot = np.zeros((hdot.n_times, 2), dtype=float)
+
+    _, P_L_M  = matrix_expectation_value( hdot, functools.partial(supermomentum_L_M, s=-2, L=l, M=m),  hdot )
+
+    P_L_M_dot[:,0] = P_L_M.real
+    P_L_M_dot[:,1] = P_L_M.imag
+
+    P_L_M_dot /= 16.*np.pi
+
+
+    return P_L_M_dot
+
