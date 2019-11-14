@@ -527,7 +527,7 @@ def supermomentum_L_M(ell_min, ell_max, L, M, s=-2):
                            (prefac *
                             swsh_Y_mat_el(s, ellp, mp, L, M, ell, m)))
 
-#note that supermomentum_flux requires specifying l,m                                                                                                  
+#note that supermomentum_flux requires specifying l,m                                                                                                                                                                                                                            
 def supermomentum_flux(h,l,m):
     import numpy as np
     from .waveform_modes import WaveformModes
@@ -547,15 +547,19 @@ def supermomentum_flux(h,l,m):
         raise ValueError("Input argument is expected to have data of type `h` or `hdot`; "
                          +"this waveform data has type `{0}`".format(h.data_type_string))
 
-    P_L_M_dot = np.zeros((hdot.n_times, 2), dtype=float)
+    P_L_M_array = np.zeros((hdot.n_times, 2), dtype=float)
 
+    #compute first term (hard charge flux)                                                                                                                                          
     _, P_L_M  = matrix_expectation_value( hdot, functools.partial(supermomentum_L_M, s=-2, L=l, M=m),  hdot )
 
-    P_L_M_dot[:,0] = P_L_M.real
-    P_L_M_dot[:,1] = P_L_M.imag
+    P_L_M /= 16.*np.pi
 
-    P_L_M_dot /= 16.*np.pi
+    if l>=2:
+    #add second term (soft charge flux)                                                                                                                                             
+        P_L_M = P_L_M+1./(8*np.pi)*np.sqrt((l+2)*(l-1)*(l+1)*l)*(hdot.data[:,(l-1)*(l-1)+l+m+1].real+(-1)**(-m)*hdot.data[:,(l-1)*(l-1)+l+m+1])
 
+    P_L_M_array[:,0]=P_L_M.real
+    P_L_M_array[:,1]=P_L_M.imag
 
-    return P_L_M_dot
+    return P_L_M_array
 
