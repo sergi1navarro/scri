@@ -512,6 +512,7 @@ def supermomentum_flux(h,l,m):
     from .waveform_modes import WaveformModes
     from . import h as htype
     from . import hdot as hdottype
+    from spherical_functions import LM_index
 
     if not isinstance(h, WaveformModes):
         raise ValueError("Momentum flux can only be calculated from a `WaveformModes` object; "
@@ -536,7 +537,7 @@ def supermomentum_flux(h,l,m):
     
     if l>=2:
     #add second term (soft charge flux)
-        P_L_M = P_L_M+1./(8*np.pi)*np.sqrt((l+2)*(l-1)*(l+1)*l)*(hdot.data[:,(l-1)*(l-1)+l+m+1].real+(-1)**(-m)*hdot.data[:,(l-1)*(l-1)+l+m+1])
+        P_L_M = P_L_M+1./(8*np.pi)*np.sqrt((l+2)*(l-1)*(l+1)*l)*(hdot.data[:,LM_index(l,m,2)].real+(-1)**(-m)*hdot.data[:,LM_index(l,-m,2)])
  
 
     P_L_M_array[:,0]=P_L_M.real
