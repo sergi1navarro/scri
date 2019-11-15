@@ -5,6 +5,23 @@ import functools
 import numpy as np
 from quaternion.numba_wrapper import njit
 
+def swsh_Y_mat_el(s, l3, m3, l1, m1, l2, m2):
+    """Compute a matrix element treating Y_{\ell, m} as a linear operator
+    
+    From the rules for the Wigner D matrices, we get the result that
+    <s, l3, m3 | Y_{l1, m1} | s, l2, m2 > =
+    \sqrt{ \frac{(2*l1+1)(2*l2+1)}{4*\pi*(2*l3+1)} } *
+    < l1, m1, l2, m2 | l3, m3 > < l1, 0, l2, −s | l3, −s >
+    where the terms on the last line are the ordinary Clebsch-Gordan coefficients.
+    See e.g. Campbell and Morgan (1971).
+    """
+    from spherical_functions import clebsch_gordan as CG
+    
+    cg1 = CG(l1, m1, l2, m2, l3, m3)
+    cg2 = CG(l1, 0., l2, -s, l3, -s)
+    
+    return np.sqrt( (2.*l1 + 1.) * (2.*l2 + 1.) / (4. * np.pi * (2.*l3 + 1)) ) * cg1 * cg2
+
 
 def swsh_indices_to_matrix_indices(matrix_iterator):
     """Convert SWSH-indexed function into caching sparse matrix-indexed function.
@@ -262,22 +279,6 @@ def p_plusminus(ell_min, ell_max, sign, s=-2):
 
     prefac = -1. * sign * np.sqrt( 8. * np.pi / 3. )
 
-    def swsh_Y_mat_el(s, l3, m3, l1, m1, l2, m2):
-        """Compute a matrix element treating Y_{\ell, m} as a linear operator
-
-        From the rules for the Wigner D matrices, we get the result that
-        <s, l3, m3 | Y_{l1, m1} | s, l2, m2 > =
-          \sqrt{ \frac{(2*l1+1)(2*l2+1)}{4*\pi*(2*l3+1)} } *
-          < l1, m1, l2, m2 | l3, m3 > < l1, 0, l2, −s | l3, −s >
-        where the terms on the last line are the ordinary Clebsch-Gordan coefficients.
-        See e.g. Campbell and Morgan (1971).
-        """
-        from spherical_functions import clebsch_gordan as CG
-
-        cg1 = CG(l1, m1, l2, m2, l3, m3)
-        cg2 = CG(l1, 0., l2, -s, l3, -s)
-
-        return np.sqrt( (2.*l1 + 1.) * (2.*l2 + 1.) / (4. * np.pi * (2.*l3 + 1)) ) * cg1 * cg2
 
     for ell in range(ell_min, ell_max+1):
         ellp_min = max(ell_min, ell - 1)
