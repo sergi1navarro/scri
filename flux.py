@@ -488,28 +488,6 @@ def poincare_fluxes(h, hdot=None):
 def supermomentum_L_M(ell_min, ell_max, L, M, s=-2):
 
     import numpy as np
-
-    # I am not sure this is the correct prefactor in general but                                                                                       
-    # it agrees with the energy and linear momentum fluxes (l=0,1) above                                                                               
-#    prefac= np.sqrt(4. * np.pi/(2.*L + 1)*math.factorial(L-abs(M))/math.factorial(L+abs(M)))
-
-    def swsh_Y_mat_el(s, l3, m3, l1, m1, l2, m2):
-        """Compute a matrix element treating Y_{\ell, m} as a linear operator                                                                         \
-           From the rules for the Wigner D matrices, we get the result that                                                                           \
-                                                                                                                                                       
-        <s, l3, m3 | Y_{l1, m1} | s, l2, m2 > =                                                                                                       
-          \sqrt{ \frac{(2*l1+1)(2*l2+1)}{4*\pi*(2*l3+1)} } *                                                                                          \
-           < l1, m1, l2, m2 | l3, m3 > < l1, 0, l2, −s | l3, −s >                                                                                     \
-          where the terms on the last line are the ordinary Clebsch-Gordan coefficients.                                                              \
-           See e.g. Campbell and Morgan (1971).                                                                                                       \
-            """
-        from spherical_functions import clebsch_gordan as CG
-
-        cg1 = CG(l1, m1, l2, m2, l3, m3)
-        cg2 = CG(l1, 0., l2, -s, l3, -s)
-
-        return np.sqrt( (2.*l1 + 1.) * (2.*l2 + 1.) / (4. * np.pi * (2.*l3 + 1)) ) * cg1 * cg2
-
     
     for ell in range(ell_min, ell_max+1):
 #        ellp_min = max(ell_min, ell - 1)                                                                                                              
@@ -528,7 +506,7 @@ def supermomentum_L_M(ell_min, ell_max, L, M, s=-2):
                            (
                             swsh_Y_mat_el(s, ellp, mp, L, M, ell, m)))
 
-#note that supermomentum_flux requires specifying l,m                                                                                                                                                                                                                            
+
 def supermomentum_flux(h,l,m):
     import numpy as np
     from .waveform_modes import WaveformModes
