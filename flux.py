@@ -544,3 +544,63 @@ def supermomentum_flux(h,l,m):
     P_L_M_array[:,1]=P_L_M.imag
 
     return P_L_M_array
+
+
+##################################                                                                                                                                         
+# SUPERMOMENTUM CHARGE                                                                                                                                                     
+
+
+def supermomentum(h,Psi2,l,m,radius):
+    import numpy as np
+    from .waveform_modes import WaveformModes
+    from . import h as htype
+    from . import hdot as hdottype
+    from spherical_functions import LM_index
+
+    if not isinstance(h, WaveformModes):
+        raise ValueError("Momentum flux can only be calculated from a `WaveformModes` object; "
+                         +"this object is of type `{0}`.".format(type(h)))
+    if h.dataType == hdottype:
+        hdot = h
+    elif h.dataType == htype:
+        hdot = h.copy()
+        hdot.dataType = hdottype
+        hdot.data = h.data_dot
+    else:
+        raise ValueError("Input argument is expected to have data of type `h` or `hdot`; "
+                         +"this waveform data has type `{0}`".format(h.data_type_string))
+
+
+
+    #not sure if needed                                                                                                                                                    
+    h.dataType = htype
+    #conjugate hdot                                                                                                                                                        
+    hdotconj=h.copy()
+    hdotconj.dataType = hdottype
+    hdotconj.data = h.data_dot.conj()
+    #conjugate h                                                                                                                                                           
+    hconj=h.copy()
+    hconj.dataType = htype
+    hconj.data = h.data.conj()
+
+
+    P_L_M_array = np.zeros((hdot.n_times, 2), dtype=float)
+    P_L_M_3_array = np.zeros((Psi2.n_times, 2), dtype=float)
+
+    #compute term involving h*h_dot                                                                                                                                        
+    _, P_L_M_1  = matrix_expectation_value( hdot , functools.partial(supermomentum_L_M, s=-2, L=l, M=m),  h )
+
+    _, P_L_M_2  = matrix_expectation_value( h , functools.partial(supermomentum_L_M, s=-2, L=l, M=m),  hdot )
+
+    P_L_M=(P_L_M_1+P_L_M_2)/radius**2
+
+    #add term involving Psi2                                                                                                                                               
+    P_L_M_3 = (-1)**m*Psi2.data[LM_index(l,-m,2)]/radius**3
+    P_L_M_3_array[:,0]=P_L_M.real
+    P_L_M_3_array[:,1]=P_L_M.imag
+
+    P_L_M_array[:,0]=P_L_M.real
+    P_L_M_array[:,1]=P_L_M.imag
+    P_L_M_array += P_L_M_3_array
+
+    return P_L_M_array
